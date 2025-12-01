@@ -1,0 +1,21 @@
+[Unit]
+Description=Strix Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/strix
+# Optionally point to a file that exports BOT_TOKEN, WEBHOOK_URL, ALLOWLIST_IDS, etc.
+EnvironmentFile=-/etc/strix/bot.env
+ExecStart=/usr/bin/env strix-bot --mode strix
+Restart=on-failure
+RestartSec=5
+User=strix
+Group=strix
+KillSignal=SIGINT
+TimeoutStopSec=20
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
