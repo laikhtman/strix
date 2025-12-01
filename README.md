@@ -74,6 +74,7 @@ pipx install strix-agent
 # Configure your AI provider
 export STRIX_LLM="openai/gpt-5"
 export LLM_API_KEY="your-api-key"
+# Alternatively place STRIX_LLM/LLM_API_KEY in a .env file alongside the repo.
 
 # Run your first security assessment
 strix --target ./app-directory
@@ -234,10 +235,6 @@ Have questions? Found a bug? Want to contribute? **[Join our Discord!](https://d
 ## 🌟 Support the Project
 
 **Love Strix?** Give us a ⭐ on GitHub!
-## 🙏 Acknowledgements
-
-Strix builds on the incredible work of open-source projects like [LiteLLM](https://github.com/BerriAI/litellm), [Caido](https://github.com/caido/caido), [ProjectDiscovery](https://github.com/projectdiscovery), [Playwright](https://github.com/microsoft/playwright), and [Textual](https://github.com/Textualize/textual). Huge thanks to their maintainers!
-
 
 > [!WARNING]
 > Only test apps you own or have permission to test. You are responsible for using Strix ethically and legally.
