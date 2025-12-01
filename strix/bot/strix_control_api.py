@@ -13,6 +13,7 @@ from strix.llm.config import LLMConfig
 from strix.telemetry.tracer import Tracer, set_global_tracer
 
 from strix.agents.StrixAgent import StrixAgent
+from strix.agents.iteration_policy import calculate_iteration_budget
 from .control_api import ControlAPI, RunInfo
 
 logger = logging.getLogger(__name__)
@@ -58,11 +59,14 @@ class StrixControlAPI(ControlAPI):
             tracer.vulnerability_found_callback = vuln_handler
 
         llm_config = LLMConfig()
+        iteration_policy = calculate_iteration_budget(targets_info, llm_config.timeout)
         agent_config = {
             "llm_config": llm_config,
-            "max_iterations": 300,
+            "max_iterations": iteration_policy["max_iterations"],
+            "iteration_policy": iteration_policy,
             "non_interactive": True,
         }
+        tracer.set_iteration_policy(iteration_policy)
         agent = StrixAgent(agent_config)
 
         async def runner() -> None:

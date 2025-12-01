@@ -5,9 +5,9 @@ Goal: Make Strix more powerful, scalable, and operator-friendly for AI programme
 Legend: [ ] pending, [~] in progress, [x] done
 
 ## Core Agent & Orchestration
-- [ ] A01: Pluggable agent graph builder (YAML/JSON) to compose multi-agent workflows with validation. (Standalone)
-- [ ] A02: Adaptive iteration limits based on target complexity and model latency; expose telemetry. (Standalone)
-- [ ] A03: Resumeable agent state (persist tool queue, memory, tracer) to survive restarts. (Standalone)
+- [x] A01: Pluggable agent graph builder (YAML/JSON) to compose multi-agent workflows with validation. (Standalone) Added schema/loader in strix/agents/graph_builder.py with validation + tests/agents/test_graph_builder.py; supports JSON and optional YAML; documented in docs/architecture.md.
+- [x] A02: Adaptive iteration limits based on target complexity and model latency; expose telemetry. (Standalone) Added iteration budget helper (strix/agents/iteration_policy.py) and wired CLI/TUI/bot to set max_iterations + tracer metadata; BaseAgent records policy; updated docs/agent-loop.md.
+- [x] A03: Resumeable agent state (persist tool queue, memory, tracer) to survive restarts. (Standalone) Added AgentState save/load helpers and BaseAgent persistence hooks (state snapshots to run dir); tests/agents/test_state_persistence.py; documented in docs/agent-loop.md.
 - [ ] A04: Strategy presets (aggressive/exploratory/compliance) selectable via CLI/bot flags. (Depends: A01)
 - [ ] A05: Memory management improvements (hierarchical summarization, eviction policy tuning). (Standalone)
 - [ ] A06: Action budget guardrail (tokens/time/tool invocations) per run with overrides and reporting. (Standalone)

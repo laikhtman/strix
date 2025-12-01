@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 from strix.agents.StrixAgent import StrixAgent
+from strix.agents.iteration_policy import calculate_iteration_budget
 from strix.llm.config import LLMConfig
 from strix.telemetry.tracer import Tracer, set_global_tracer
 
@@ -74,9 +75,11 @@ async def run_cli(args: Any) -> None:  # noqa: PLR0915
     }
 
     llm_config = LLMConfig()
+    iteration_policy = calculate_iteration_budget(args.targets_info, llm_config.timeout)
     agent_config = {
         "llm_config": llm_config,
-        "max_iterations": 300,
+        "max_iterations": iteration_policy["max_iterations"],
+        "iteration_policy": iteration_policy,
         "non_interactive": True,
     }
 
@@ -85,6 +88,7 @@ async def run_cli(args: Any) -> None:  # noqa: PLR0915
 
     tracer = Tracer(args.run_name)
     tracer.set_scan_config(scan_config)
+    tracer.set_iteration_policy(iteration_policy)
 
     def display_vulnerability(report_id: str, title: str, content: str, severity: str) -> None:
         severity_color = get_severity_color(severity.lower())

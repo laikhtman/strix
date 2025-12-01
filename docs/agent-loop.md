@@ -3,11 +3,12 @@
 Primary files: `agents/base_agent.py`, `agents/state.py`, `agents/StrixAgent/strix_agent.py`, `agents/StrixAgent/system_prompt.jinja`.
 
 ## Lifecycle
-1) Agent instantiated with config: llm config, max iterations (default 300), non-interactive flag, optional state/local sources.
+1) Agent instantiated with config: llm config, max iterations (default 300; adaptive budget via `agents/iteration_policy.py` based on targets + LLM timeout recorded in tracer), non-interactive flag, optional state/local sources.
 2) `AgentMeta` wires Jinja environment per agent folder for prompts.
 3) `AgentState` tracks messages, tasks, wait states, agent graph ids.
 4) Main loop (in `BaseAgent.run`): fetches/creates state, processes queued messages, updates tracer, calls LLM with prompt, dispatches tool invocations, handles waits/finishes.
 5) Completion when finish tool invoked, max iterations hit, or fatal error.
+6) State persistence: snapshots saved as JSON (default in `strix_runs/<run>/<agent_id>_state.json`); can resume via config `load_state_from`.
 
 ## Message handling
 - Messages stored in `AgentState`; inter-agent messages include metadata and are added as user messages with delivery notice.

@@ -57,6 +57,10 @@ class BaseAgent(metaclass=AgentMeta):
 
         self.local_sources = config.get("local_sources", [])
         self.non_interactive = config.get("non_interactive", False)
+        self.persist_state = config.get("persist_state", True)
+        self.state_path = Path(config["state_path"]) if config.get("state_path") else None
+        self.state_load_path = config.get("load_state_from")
+        self.iteration_policy = config.get("iteration_policy")
 
         if "max_iterations" in config:
             self.max_iterations = config["max_iterations"]
@@ -68,7 +72,9 @@ class BaseAgent(metaclass=AgentMeta):
         self.llm = LLM(self.llm_config, agent_name=self.agent_name)
 
         state_from_config = config.get("state")
-        if state_from_config is not None:
+        if self.state_load_path:
+            self.state = AgentState.load_from_path(self.state_load_path)
+        elif state_from_config is not None:
             self.state = state_from_config
         else:
             self.state = AgentState(
@@ -84,6 +90,8 @@ class BaseAgent(metaclass=AgentMeta):
 
         tracer = get_global_tracer()
         if tracer:
+            if self.iteration_policy:
+                tracer.set_iteration_policy(self.iteration_policy)
             tracer.log_agent_creation(
                 agent_id=self.state.agent_id,
                 name=self.state.agent_name,
@@ -145,6 +153,31 @@ class BaseAgent(metaclass=AgentMeta):
         if self.state.parent_id is None and agents_graph_actions._root_agent_id is None:
             agents_graph_actions._root_agent_id = self.state.agent_id
 
+    def _get_state_path(self, tracer: Optional["Tracer"]) -> Optional[Path]:
+        if not self.persist_state:
+            return None
+
+        if self.state_path:
+            return self.state_path
+
+        if tracer:
+            try:
+                return tracer.get_run_dir() / f"{self.state.agent_id}_state.json"
+            except Exception:  # noqa: BLE001
+                return None
+
+        return Path.cwd() / f"{self.state.agent_id}_state.json"
+
+    def _persist_state_snapshot(self, tracer: Optional["Tracer"]) -> None:
+        path = self._get_state_path(tracer)
+        if not path:
+            return
+
+        try:
+            self.state.save_to_path(path)
+        except Exception:
+            logger.exception("Failed to persist agent state to %s", path)
+
     def cancel_current_execution(self) -> None:
         if self._current_task and not self._current_task.done():
             self._current_task.cancel()
@@ -156,6 +189,7 @@ class BaseAgent(metaclass=AgentMeta):
         from strix.telemetry.tracer import get_global_tracer
 
         tracer = get_global_tracer()
+        self._persist_state_snapshot(tracer)
 
         while True:
             self._check_agent_messages(self.state)
@@ -166,6 +200,7 @@ class BaseAgent(metaclass=AgentMeta):
 
             if self.state.should_stop():
                 if self.non_interactive:
+                    self._persist_state_snapshot(tracer)
                     return self.state.final_result or {}
                 await self._enter_waiting_state(tracer)
                 continue
@@ -205,6 +240,7 @@ class BaseAgent(metaclass=AgentMeta):
 
             try:
                 should_finish = await self._process_iteration(tracer)
+                self._persist_state_snapshot(tracer)
                 if should_finish:
                     if self.non_interactive:
                         self.state.set_completed({"success": True})

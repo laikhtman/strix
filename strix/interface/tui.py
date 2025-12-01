@@ -31,6 +31,7 @@ from textual.widgets import Button, Label, Static, TextArea, Tree
 from textual.widgets.tree import TreeNode
 
 from strix.agents.StrixAgent import StrixAgent
+from strix.agents.iteration_policy import calculate_iteration_budget
 from strix.interface.utils import build_live_stats_text
 from strix.llm.config import LLMConfig
 from strix.telemetry.tracer import Tracer, set_global_tracer
@@ -282,6 +283,8 @@ class StrixTUIApp(App):  # type: ignore[misc]
 
         self.tracer = Tracer(self.scan_config["run_name"])
         self.tracer.set_scan_config(self.scan_config)
+        if self.agent_config.get("iteration_policy"):
+            self.tracer.set_iteration_policy(self.agent_config["iteration_policy"])
         set_global_tracer(self.tracer)
 
         self.agent_nodes: dict[str, TreeNode] = {}
@@ -321,9 +324,11 @@ class StrixTUIApp(App):  # type: ignore[misc]
     def _build_agent_config(self, args: argparse.Namespace) -> dict[str, Any]:
         llm_config = LLMConfig()
 
+        iteration_policy = calculate_iteration_budget(args.targets_info, llm_config.timeout)
         config = {
             "llm_config": llm_config,
-            "max_iterations": 300,
+            "max_iterations": iteration_policy["max_iterations"],
+            "iteration_policy": iteration_policy,
         }
 
         if getattr(args, "local_sources", None):

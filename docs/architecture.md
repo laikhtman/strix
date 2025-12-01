@@ -36,7 +36,7 @@ CLI/TUI -> Tracer -> StrixAgent -> LLM -> Tool Executor -> Runtime (Docker) -> T
 
 ## Persistence
 - Runs: `strix_runs/<run_name>` contains reports and logs (non-interactive mode prints to stdout too).
-- Agent graph: managed in-memory via `tools/agents_graph/agents_graph_actions.py`, rendered by interface.
+- Agent graph: managed in-memory via `tools/agents_graph/agents_graph_actions.py`, rendered by interface. Graph definitions can be loaded/validated from YAML/JSON via `agents/graph_builder.py` (unique ids, single root, parent/child checks) before instantiation.
 
 ## Non-interactive mode
 - Enabled via `-n/--non-interactive`; suppresses interactive UI, streams findings to stdout; still uses tracer callbacks for vulnerability events.

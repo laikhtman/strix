@@ -47,6 +47,7 @@ class Tracer:
             "end_time": None,
             "targets": [],
             "status": "running",
+            "max_iterations": None,
         }
         self._run_dir: Path | None = None
         self._next_execution_id = 1
@@ -198,10 +199,15 @@ class Tracer:
             {
                 "targets": config.get("targets", []),
                 "user_instructions": config.get("user_instructions", ""),
-                "max_iterations": config.get("max_iterations", 200),
+                "max_iterations": config.get("max_iterations", 300),
             }
         )
         self.get_run_dir()
+
+    def set_iteration_policy(self, policy: dict[str, Any]) -> None:
+        self.run_metadata["iteration_policy"] = policy
+        if "max_iterations" in policy:
+            self.run_metadata["max_iterations"] = policy["max_iterations"]
 
     def save_run_data(self, mark_complete: bool = False) -> None:
         try:

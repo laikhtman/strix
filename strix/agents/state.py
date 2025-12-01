@@ -1,5 +1,7 @@
+import json
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -161,3 +163,15 @@ class AgentState(BaseModel):
             "has_errors": len(self.errors) > 0,
             "max_iterations_reached": self.has_reached_max_iterations() and not self.completed,
         }
+
+    def save_to_path(self, path: str | Path) -> Path:
+        path_obj = Path(path)
+        path_obj.parent.mkdir(parents=True, exist_ok=True)
+        path_obj.write_text(self.model_dump_json(), encoding="utf-8")
+        return path_obj
+
+    @classmethod
+    def load_from_path(cls, path: str | Path) -> "AgentState":
+        path_obj = Path(path)
+        data = json.loads(path_obj.read_text(encoding="utf-8"))
+        return cls.model_validate(data)
