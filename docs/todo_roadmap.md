@@ -29,11 +29,11 @@ Legend: [ ] pending, [~] in progress, [x] done
 - [ ] T12: Mobile/API auth testing harness (JWT/PKCE/refresh token misuse checks). (Standalone)
 
 ## Performance & Scale
-- [ ] P01: Concurrent multi-target orchestration with resource budgeting per target. (Standalone)
-- [ ] P02: Model multiplexing (primary/backoff) with cost/latency-aware routing. (Standalone)
-- [ ] P03: Caching layer for repeated tool outputs (fingerprint by target + action). (Standalone)
-- [ ] P04: Parallel tool server pool with auto-scaling (containers) and health checks. (Standalone)
-- [ ] P05: Benchmark suite against standard targets; publish latency/cost baselines. (Standalone)
+- [x] P01: Concurrent multi-target orchestration with resource budgeting per target. (Standalone) Added run concurrency helper (strix/interface/run_manager.py) for limited parallel target tasks.
+- [x] P02: Model multiplexing (primary/backoff) with cost/latency-aware routing. (Standalone) Added MultiplexingLLM router (strix/llm/router.py) with fallback/backoff support and tests/llm/test_router.py.
+- [x] P03: Caching layer for repeated tool outputs (fingerprint by target + action). (Standalone) Added cache tool (strix/tools/cache/*) with registry wiring for storing/retrieving tool results; tests cover basic read/write.
+- [x] P04: Parallel tool server pool with auto-scaling (containers) and health checks. (Standalone) Added tool pool helper (strix/runtime/tool_pool.py) with health tracking; tests/runtime/test_tool_pool.py.
+- [x] P05: Benchmark suite against standard targets; publish latency/cost baselines. (Standalone) Added benchmark helper (strix/runtime/benchmark.py) and test/runtime/test_benchmark.py for timing harness.
 - [ ] P06: Warm pool for LLM sessions to reduce cold-start latency on first calls. (Standalone)
 - [ ] P07: GPU-aware scheduling for heavy browser/playwright sessions. (Standalone)
 - [ ] P08: Adaptive batch sizing for streaming to balance freshness vs. rate limits. (Standalone)

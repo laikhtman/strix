@@ -33,6 +33,7 @@ if not SANDBOX_MODE:
     from .proxy import *  # noqa: F403
     from .python import *  # noqa: F403
     from .reporting import *  # noqa: F403
+    from .cache import *  # noqa: F403
     from .api_probe import *  # noqa: F403
     from .sast import *  # noqa: F403
     from .terminal import *  # noqa: F403

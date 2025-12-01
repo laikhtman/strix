@@ -1,0 +1,33 @@
+<tools>
+  <tool name="cache_result">
+    <description>Store a tool result keyed by target and action fingerprint.</description>
+    <parameters>
+      <parameter name="target" type="string" required="true">
+        <description>Target identifier (e.g., URL or repo).</description>
+      </parameter>
+      <parameter name="action" type="string" required="true">
+        <description>Action name or tool invocation fingerprint.</description>
+      </parameter>
+      <parameter name="result" type="string" required="true">
+        <description>Serialized result payload to store.</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Confirmation of cache write.</description>
+    </returns>
+  </tool>
+  <tool name="get_cached_result">
+    <description>Retrieve a cached result by target/action fingerprint.</description>
+    <parameters>
+      <parameter name="target" type="string" required="true">
+        <description>Target identifier.</description>
+      </parameter>
+      <parameter name="action" type="string" required="true">
+        <description>Action name or tool invocation fingerprint.</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Cached result payload if present.</description>
+    </returns>
+  </tool>
+</tools>
