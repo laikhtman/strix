@@ -34,9 +34,12 @@
       <parameter name="clear" type="boolean" required="false">
         <description>For 'get_console_logs' action: whether to clear console logs after retrieving them. Default is False (keep logs).</description>
       </parameter>
+      <parameter name="limit" type="integer" required="false">
+        <description>Optional limit when fetching network events (default 50; max stored 200).</description>
+      </parameter>
     </parameters>
     <returns type="Dict[str, Any]">
-      <description>Response containing: - screenshot: Base64 encoded PNG of the current page state - url: Current page URL - title: Current page title - viewport: Current browser viewport dimensions - tab_id: ID of the current active tab - all_tabs: Dict of all open tab IDs and their URLs - message: Status message about the action performed - js_result: Result of JavaScript execution (for execute_js action) - pdf_saved: File path of saved PDF (for save_pdf action) - console_logs: Array of console messages (for get_console_logs action)   Limited to 50KB total and 200 most recent logs. Individual messages truncated at 1KB. - page_source: HTML source code (for view_source action)   Large pages are truncated to 100KB (keeping beginning and end sections).</description>
+      <description>Response containing: - screenshot: Base64 encoded PNG of the current page state - screenshot_changed: Whether the latest screenshot differs from prior capture - url: Current page URL - title: Current page title - viewport: Current browser viewport dimensions - tab_id: ID of the current active tab - all_tabs: Dict of all open tab IDs and their URLs - message: Status message about the action performed - js_result: Result of JavaScript execution (for execute_js action) - pdf_saved: File path of saved PDF (for save_pdf action) - console_logs: Array of console messages (for get_console_logs action)   Limited to 50KB total and 200 most recent logs. Individual messages truncated at 1KB. - network_events: Recent requests/responses with status, method, duration_ms (for get_network_events action) - page_source: HTML source code (for view_source action)   Large pages are truncated to 100KB (keeping beginning and end sections).</description>
     </returns>
     <notes>
   Important usage rules:

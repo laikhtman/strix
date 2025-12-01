@@ -8,6 +8,10 @@ def create_vulnerability_report(
     title: str,
     content: str,
     severity: str,
+    cvss_score: float | None = None,
+    references: list[str] | None = None,
+    fix_recommendation: str | None = None,
+    cwe: list[str] | None = None,
 ) -> dict[str, Any]:
     validation_error = None
     if not title or not title.strip():
@@ -35,6 +39,10 @@ def create_vulnerability_report(
                 title=title,
                 content=content,
                 severity=severity,
+                cvss_score=cvss_score,
+                references=references,
+                fix_recommendation=fix_recommendation,
+                cwe=cwe,
             )
 
             return {
@@ -42,6 +50,7 @@ def create_vulnerability_report(
                 "message": f"Vulnerability report '{title}' created successfully",
                 "report_id": report_id,
                 "severity": severity.lower(),
+                "cvss_score": cvss_score,
             }
         import logging
 

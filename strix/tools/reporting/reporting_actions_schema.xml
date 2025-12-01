@@ -22,6 +22,18 @@ DO NOT USE:
       <parameter name="severity" type="string" required="true">
         <description>Severity level: critical, high, medium, low, or info</description>
       </parameter>
+      <parameter name="cvss_score" type="number" required="false">
+        <description>Optional CVSS base score estimate (0.0 - 10.0)</description>
+      </parameter>
+      <parameter name="references" type="array" required="false">
+        <description>Optional list of references (CWE, OWASP, docs) relevant to the finding</description>
+      </parameter>
+      <parameter name="fix_recommendation" type="string" required="false">
+        <description>Optional concise fix recommendation to include in the report</description>
+      </parameter>
+      <parameter name="cwe" type="array" required="false">
+        <description>Optional list of CWE identifiers</description>
+      </parameter>
     </parameters>
     <returns type="Dict[str, Any]">
       <description>Response containing success status and message</description>

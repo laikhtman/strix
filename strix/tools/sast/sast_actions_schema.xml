@@ -1,0 +1,27 @@
+<tools>
+  <tool name="run_sast_scan">
+    <description>Perform a lightweight static scan of Python files to flag risky constructs (eval/exec, shell=True, weak randomness) for quick triage.</description>
+    <parameters>
+      <parameter name="target_path" type="string" required="false">
+        <description>Path to scan (defaults to current working directory).</description>
+      </parameter>
+      <parameter name="max_files" type="integer" required="false">
+        <description>Optional cap on number of files to scan (default 200).</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Findings grouped under 'static' with file, line, rule_id, severity, and message.</description>
+    </returns>
+  </tool>
+  <tool name="scan_dependencies">
+    <description>Collect Python dependencies from requirements.txt or pyproject.toml and flag unpinned or wildcard versions.</description>
+    <parameters>
+      <parameter name="target_path" type="string" required="false">
+        <description>Path to scan (defaults to current working directory).</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Dependency findings under 'dependencies' with package, spec, severity, and reason.</description>
+    </returns>
+  </tool>
+</tools>

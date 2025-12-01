@@ -15,11 +15,11 @@ Legend: [ ] pending, [~] in progress, [x] done
 - [ ] A08: Multi-model consensus mode to reduce hallucinations for high-risk findings. (Standalone)
 
 ## Tooling & Coverage
-- [ ] T01: Add SAST/dep scanning tool (e.g., Semgrep/Trivy) with parsers into unified findings. (Standalone)
-- [ ] T02: Browser automation enhancements (network capture/har timing, screenshot diffs). (Standalone)
-- [ ] T03: API probing tool (OpenAPI/Swagger ingestion, auth flows, fuzzing of endpoints). (Standalone)
-- [ ] T04: Auth-focused playbooks (OIDC/SAML/SSO) with reusable prompt/tool bundles. (Standalone)
-- [ ] T05: Reporting enrichment (CVSS estimation, fix-by snippets, references to CWE/OWASP). (Standalone)
+- [x] T01: Add SAST/dep scanning tool (e.g., Semgrep/Trivy) with parsers into unified findings. (Standalone) Added SAST/deps tool (strix/tools/sast/*), registry wiring, docs/tools-and-extensions.md, and tests (tests/tools/test_sast_tool.py).
+- [x] T02: Browser automation enhancements (network capture/har timing, screenshot diffs). (Standalone) Added network logging + screenshot diff in browser tool (browser_instance/tab_manager/browser_actions/schema); new actions get_network_events/capture_screenshot_diff.
+- [x] T03: API probing tool (OpenAPI/Swagger ingestion, auth flows, fuzzing of endpoints). (Standalone) Added OpenAPI loader + fuzz suggestion tool (strix/tools/api_probe/*), registry wiring, docs/tools-and-extensions.md, tests/tools/test_api_probe_tool.py.
+- [x] T04: Auth-focused playbooks (OIDC/SAML/SSO) with reusable prompt/tool bundles. (Standalone) Added auth playbook prompt module (strix/prompts/auth/oidc_saml_sso.jinja) + docs/prompts.md and tests/prompts/test_auth_playbook_prompt.py.
+- [x] T05: Reporting enrichment (CVSS estimation, fix-by snippets, references to CWE/OWASP). (Standalone) Reporting tool now accepts CVSS/fix/references/CWE metadata (reporting_actions/schema, tracer persistence, SARIF/CSV/JSONL); docs/tools-and-extensions.md; tests/tools/test_reporting_enrichment.py.
 - [x] T06: Structured finding export (SARIF/JSONL) for CI upload. (Standalone) Added JSONL vulnerability export and SARIF 2.1.0 writer in tracer save_run_data/_build_sarif_report (strix/telemetry/tracer.py); tuned SARIF driver metadata to avoid assumed URLs and normalized runName serialization; documented structured exports in docs/telemetry-and-observability.md and docs/setup-and-running.md; validated end-to-end via tracer run output.
 - [ ] T07: Offline mode with cached model responses (for deterministic regression fixtures). (Depends: A03)
 - [ ] T08: Advanced redaction policies (PII, keys, JWTs) configurable per run. (Standalone)

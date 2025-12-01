@@ -30,6 +30,9 @@ class BrowserInstance:
         self._next_tab_id = 1
 
         self.console_logs: dict[str, list[dict[str, Any]]] = {}
+        self.network_events: dict[str, list[dict[str, Any]]] = {}
+        self._request_start: dict[int, float] = {}
+        self._last_screenshots: dict[str, bytes] = {}
 
         self._loop: asyncio.AbstractEventLoop | None = None
         self._loop_thread: threading.Thread | None = None
@@ -77,6 +80,32 @@ class BrowserInstance:
 
         page.on("console", handle_console)
 
+    async def _setup_network_logging(self, page: Page, tab_id: str) -> None:
+        self.network_events[tab_id] = []
+
+        def handle_request(request: Any) -> None:
+            self._request_start[id(request)] = asyncio.get_event_loop().time()
+
+        def handle_response(response: Any) -> None:
+            start = self._request_start.pop(id(response.request), None)
+            duration_ms = None
+            if start is not None:
+                duration_ms = round((asyncio.get_event_loop().time() - start) * 1000, 2)
+
+            event = {
+                "url": response.url,
+                "method": response.request.method,
+                "status": response.status,
+                "resource_type": response.request.resource_type,
+                "duration_ms": duration_ms,
+            }
+            events = self.network_events.get(tab_id, [])
+            events.append(event)
+            self.network_events[tab_id] = events[-200:]
+
+        page.on("request", handle_request)
+        page.on("response", handle_response)
+
     async def _launch_browser(self, url: str | None = None) -> dict[str, Any]:
         self.playwright = await async_playwright().start()
 
@@ -106,6 +135,7 @@ class BrowserInstance:
         self.current_page_id = tab_id
 
         await self._setup_console_logging(page, tab_id)
+        await self._setup_network_logging(page, tab_id)
 
         if url:
             await page.goto(url, wait_until="domcontentloaded")
@@ -125,6 +155,9 @@ class BrowserInstance:
 
         screenshot_bytes = await page.screenshot(type="png", full_page=False)
         screenshot_b64 = base64.b64encode(screenshot_bytes).decode("utf-8")
+        previous = self._last_screenshots.get(tab_id)
+        screenshot_changed = previous is None or previous != screenshot_bytes
+        self._last_screenshots[tab_id] = screenshot_bytes
 
         url = page.url
         title = await page.title()
@@ -144,6 +177,7 @@ class BrowserInstance:
             "viewport": viewport,
             "tab_id": tab_id,
             "all_tabs": all_tabs,
+            "screenshot_changed": screenshot_changed,
         }
 
     def launch(self, url: str | None = None) -> dict[str, Any]:
@@ -275,6 +309,7 @@ class BrowserInstance:
         self.current_page_id = tab_id
 
         await self._setup_console_logging(page, tab_id)
+        await self._setup_network_logging(page, tab_id)
 
         if url:
             await page.goto(url, wait_until="domcontentloaded")
@@ -400,6 +435,42 @@ class BrowserInstance:
         state = await self._get_page_state(tab_id)
         state["console_logs"] = logs
         return state
+
+    def get_network_events(
+        self, tab_id: str | None = None, limit: int = 50, clear: bool = False
+    ) -> dict[str, Any]:
+        with self._execution_lock:
+            return self._run_async(self._get_network_events(tab_id, limit, clear))
+
+    async def _get_network_events(
+        self, tab_id: str | None = None, limit: int = 50, clear: bool = False
+    ) -> dict[str, Any]:
+        if not tab_id:
+            tab_id = self.current_page_id
+
+        if not tab_id or tab_id not in self.pages:
+            raise ValueError(f"Tab '{tab_id}' not found")
+
+        events = self.network_events.get(tab_id, [])
+        limited = events[-limit:]
+        if clear:
+            self.network_events[tab_id] = []
+
+        state = await self._get_page_state(tab_id)
+        state["network_events"] = limited
+        return state
+
+    def capture_screenshot_diff(self, tab_id: str | None = None) -> dict[str, Any]:
+        with self._execution_lock:
+            return self._run_async(self._capture_screenshot_diff(tab_id))
+
+    async def _capture_screenshot_diff(self, tab_id: str | None = None) -> dict[str, Any]:
+        state = await self._get_page_state(tab_id)
+        return {
+            "tab_id": state["tab_id"],
+            "screenshot": state["screenshot"],
+            "screenshot_changed": state.get("screenshot_changed", False),
+        }
 
     def view_source(self, tab_id: str | None = None) -> dict[str, Any]:
         with self._execution_lock:

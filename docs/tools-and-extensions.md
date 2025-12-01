@@ -14,7 +14,9 @@
 - `notes`: capture structured notes.
 - `proxy`: HTTP proxy controls.
 - `python`: execute sandboxed Python.
-- `reporting`: reporting actions.
+- `reporting`: reporting actions (vuln reports with severity + optional CVSS/CWE/references/fix hints).
+- `sast`: lightweight static and dependency scanning (Python patterns + unpinned deps).
+- `api_probe`: load OpenAPI specs and suggest fuzz payloads for endpoints.
 - `terminal`: terminal session actions.
 - `thinking`: internal deliberation steps.
 - `web_search`: web search actions.

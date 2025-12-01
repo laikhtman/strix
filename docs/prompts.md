@@ -5,6 +5,7 @@
 - Frameworks: `prompts/frameworks/*.jinja` (e.g., `fastapi`, `nextjs`)
 - Technologies: `prompts/technologies/*.jinja` (e.g., `firebase_firestore`, `supabase`)
 - Vulnerabilities: `prompts/vulnerabilities/*.jinja` (e.g., `sql_injection`, `xss`, `rce`)
+- Auth playbooks: `prompts/auth/oidc_saml_sso.jinja`
 - Cloud/custom/recon placeholders: `prompts/cloud`, `prompts/custom`, `prompts/reconnaissance`
 - Agent system prompt: `agents/StrixAgent/system_prompt.jinja`
 

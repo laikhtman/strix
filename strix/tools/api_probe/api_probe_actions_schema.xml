@@ -1,0 +1,24 @@
+<tools>
+  <tool name="load_openapi_spec">
+    <description>Load an OpenAPI/Swagger specification (JSON or YAML) and extract endpoints, methods, and basic parameter info for planning probes.</description>
+    <parameters>
+      <parameter name="spec_path" type="string" required="true">
+        <description>Path to the OpenAPI/Swagger file (.json/.yaml/.yml).</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Endpoints array with path, method, summary, and parameters (name/location/required/type).</description>
+    </returns>
+  </tool>
+  <tool name="suggest_api_fuzz_cases">
+    <description>Generate lightweight fuzzing suggestions for endpoints based on their parameters (e.g., injection strings).</description>
+    <parameters>
+      <parameter name="endpoints" type="array" required="true">
+        <description>Endpoints as returned by load_openapi_spec.</description>
+      </parameter>
+    </parameters>
+    <returns type="Dict[str, Any]">
+      <description>Fuzz suggestions per endpoint with placeholder payloads.</description>
+    </returns>
+  </tool>
+</tools>

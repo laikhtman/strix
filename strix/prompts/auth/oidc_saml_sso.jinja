@@ -1,0 +1,24 @@
+Title: OIDC/SAML/SSO Authentication Playbook
+
+Goals:
+- Validate OIDC/SAML login flows, session handling, and token misuse.
+- Identify insecure redirect URIs, weak token validation, and replay risks.
+
+Checklist:
+- Map identity flow: discovery endpoints (.well-known/openid-configuration), authz URL, token URL, JWKS, ACS/SSO endpoints.
+- Try login with controlled redirect_uri and response_mode/form_post vs query to detect open redirect/exfil.
+- Inspect tokens (id/access) for alg=none, kid confusion, missing aud/iss/exp/nbf/iat checks; attempt forged token with wrong kid.
+- Test SAML: unsigned/assertion wrapping, replay (multiple submissions), relaxed Recipient/Audience/NotOnOrAfter.
+- Evaluate session fixation and cookie flags (Secure, HttpOnly, SameSite) post-login.
+- Fuzz return_to/RelayState/state/redirect_uri for open redirect or code leakage.
+- Verify logout/invalidation: token revocation endpoints, backchannel/frontchannel logout.
+- Check MFA/step-up enforcement and device binding if claimed.
+
+Tools:
+- Prefer browser/proxy for auth flows; capture network requests and response timing.
+- Use terminal/python tools only for inspecting tokens and JWKS responses; avoid hitting prod identity endpoints with aggressive fuzzing.
+
+Cautions:
+- Do not brute-force passwords.
+- Do not send tokens to external endpoints.
+- Keep all tokens in workspace; redact before sharing.

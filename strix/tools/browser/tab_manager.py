@@ -248,6 +248,39 @@ class BrowserTabManager:
         else:
             return result
 
+    def get_network_events(
+        self, tab_id: str | None = None, limit: int = 50, clear: bool = False
+    ) -> dict[str, Any]:
+        with self._lock:
+            if self.browser_instance is None:
+                raise ValueError("Browser not launched")
+
+        try:
+            result = self.browser_instance.get_network_events(tab_id, limit, clear)
+            result["message"] = (
+                f"Network events retrieved for tab {result.get('tab_id', 'current')}"
+            )
+        except (OSError, ValueError, RuntimeError) as e:
+            raise RuntimeError(f"Failed to get network events: {e}") from e
+        else:
+            return result
+
+    def capture_screenshot_diff(self, tab_id: str | None = None) -> dict[str, Any]:
+        with self._lock:
+            if self.browser_instance is None:
+                raise ValueError("Browser not launched")
+
+        try:
+            result = self.browser_instance.capture_screenshot_diff(tab_id)
+            result["message"] = (
+                f"Screenshot captured for tab {result.get('tab_id', 'current')} "
+                f"({'changed' if result.get('screenshot_changed') else 'unchanged'})"
+            )
+        except (OSError, ValueError, RuntimeError) as e:
+            raise RuntimeError(f"Failed to capture screenshot diff: {e}") from e
+        else:
+            return result
+
     def view_source(self, tab_id: str | None = None) -> dict[str, Any]:
         with self._lock:
             if self.browser_instance is None:

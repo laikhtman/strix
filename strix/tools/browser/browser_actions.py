@@ -24,6 +24,8 @@ BrowserAction = Literal[
     "press_key",
     "save_pdf",
     "get_console_logs",
+    "get_network_events",
+    "capture_screenshot_diff",
     "view_source",
     "close",
     "list_tabs",
@@ -156,6 +158,7 @@ def _handle_utility_actions(
     file_path: str | None = None,
     tab_id: str | None = None,
     clear: bool = False,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     if action == "wait":
         _validate_duration(action, duration)
@@ -171,6 +174,10 @@ def _handle_utility_actions(
         return manager.save_pdf(file_path, tab_id)
     if action == "get_console_logs":
         return manager.get_console_logs(tab_id, clear)
+    if action == "get_network_events":
+        return manager.get_network_events(tab_id, limit or 50, clear)
+    if action == "capture_screenshot_diff":
+        return manager.capture_screenshot_diff(tab_id)
     if action == "view_source":
         return manager.view_source(tab_id)
     if action == "close":
@@ -190,6 +197,7 @@ def browser_action(
     key: str | None = None,
     file_path: str | None = None,
     clear: bool = False,
+    limit: int | None = None,
 ) -> dict[str, Any]:
     manager = get_browser_tab_manager()
 
@@ -210,6 +218,8 @@ def browser_action(
             "execute_js",
             "save_pdf",
             "get_console_logs",
+            "get_network_events",
+            "capture_screenshot_diff",
             "view_source",
             "close",
         }
@@ -222,7 +232,7 @@ def browser_action(
             return _handle_tab_actions(manager, action, url, tab_id)
         if action in utility_actions:
             return _handle_utility_actions(
-                manager, action, duration, js_code, file_path, tab_id, clear
+                manager, action, duration, js_code, file_path, tab_id, clear, limit
             )
 
         _raise_unknown_action(action)

@@ -76,6 +76,10 @@ class Tracer:
         title: str,
         content: str,
         severity: str,
+        cvss_score: float | None = None,
+        references: list[str] | None = None,
+        fix_recommendation: str | None = None,
+        cwe: list[str] | None = None,
     ) -> str:
         report_id = f"vuln-{len(self.vulnerability_reports) + 1:04d}"
 
@@ -85,6 +89,10 @@ class Tracer:
             "content": content.strip(),
             "severity": severity.lower().strip(),
             "timestamp": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "cvss_score": cvss_score,
+            "references": references or [],
+            "fix_recommendation": fix_recommendation,
+            "cwe": cwe or [],
         }
 
         self.vulnerability_reports.append(report)
@@ -243,9 +251,20 @@ class Tracer:
                         f.write(f"# {report['title']}\n\n")
                         f.write(f"**ID:** {report['id']}\n")
                         f.write(f"**Severity:** {report['severity'].upper()}\n")
+                        if report.get("cvss_score") is not None:
+                            f.write(f"**CVSS:** {report['cvss_score']}\n")
+                        if report.get("cwe"):
+                            f.write(f"**CWE:** {', '.join(report['cwe'])}\n")
                         f.write(f"**Found:** {report['timestamp']}\n\n")
                         f.write("## Description\n\n")
                         f.write(f"{report['content']}\n")
+                        if report.get("fix_recommendation"):
+                            f.write("\n## Fix Recommendation\n\n")
+                            f.write(f"{report['fix_recommendation']}\n")
+                        if report.get("references"):
+                            f.write("\n## References\n\n")
+                            for ref in report["references"]:
+                                f.write(f"- {ref}\n")
                     self._saved_vuln_ids.add(report["id"])
 
                 if self.vulnerability_reports:
@@ -259,7 +278,16 @@ class Tracer:
                     with vuln_csv_file.open("w", encoding="utf-8", newline="") as f:
                         import csv
 
-                        fieldnames = ["id", "title", "severity", "timestamp", "file"]
+                        fieldnames = [
+                            "id",
+                            "title",
+                            "severity",
+                            "timestamp",
+                            "cvss",
+                            "cwe",
+                            "references",
+                            "file",
+                        ]
                         writer = csv.DictWriter(f, fieldnames=fieldnames)
                         writer.writeheader()
 
@@ -270,9 +298,12 @@ class Tracer:
                                     "title": report["title"],
                                     "severity": report["severity"].upper(),
                                     "timestamp": report["timestamp"],
-                                "file": f"vulnerabilities/{report['id']}.md",
-                            }
-                        )
+                                    "cvss": report.get("cvss_score"),
+                                    "cwe": ",".join(report.get("cwe", [])),
+                                    "references": ",".join(report.get("references", [])),
+                                    "file": f"vulnerabilities/{report['id']}.md",
+                                }
+                            )
 
                     vuln_jsonl_file = run_dir / "vulnerabilities.jsonl"
                     with vuln_jsonl_file.open("w", encoding="utf-8") as f:
@@ -283,6 +314,10 @@ class Tracer:
                                 "severity": report["severity"],
                                 "timestamp": report["timestamp"],
                                 "content": report["content"],
+                                "cvss_score": report.get("cvss_score"),
+                                "cwe": report.get("cwe", []),
+                                "references": report.get("references", []),
+                                "fix_recommendation": report.get("fix_recommendation"),
                                 "file": f"vulnerabilities/{report['id']}.md",
                                 "run_id": self.run_id,
                                 "run_name": self.run_name,
@@ -402,6 +437,10 @@ class Tracer:
                     "severity": severity_key,
                     "timestamp": report.get("timestamp"),
                     "content": report.get("content"),
+                    "cvss_score": report.get("cvss_score"),
+                    "cwe": report.get("cwe", []),
+                    "references": report.get("references", []),
+                    "fix_recommendation": report.get("fix_recommendation"),
                     "runId": self.run_id,
                     "runName": self.run_name or "",
                 },
