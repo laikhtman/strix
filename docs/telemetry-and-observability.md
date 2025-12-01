@@ -18,6 +18,7 @@
 ## Consumption
 - TUI/CLI read tracer callbacks for live updates.
 - Persist outputs in `strix_runs/<run_name>` (extend to send elsewhere if needed).
+- Structured exports: `vulnerabilities.csv`, `vulnerabilities.jsonl`, and SARIF `vulnerabilities.sarif.json` for CI-friendly ingestion.
 
 ## Maintenance
 - Update event fields when tracer schema evolves; ensure UI renderers are aligned with new telemetry.

@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
@@ -263,9 +264,30 @@ class Tracer:
                                     "title": report["title"],
                                     "severity": report["severity"].upper(),
                                     "timestamp": report["timestamp"],
-                                    "file": f"vulnerabilities/{report['id']}.md",
-                                }
-                            )
+                                "file": f"vulnerabilities/{report['id']}.md",
+                            }
+                        )
+
+                    vuln_jsonl_file = run_dir / "vulnerabilities.jsonl"
+                    with vuln_jsonl_file.open("w", encoding="utf-8") as f:
+                        for report in sorted_reports:
+                            json_record = {
+                                "id": report["id"],
+                                "title": report["title"],
+                                "severity": report["severity"],
+                                "timestamp": report["timestamp"],
+                                "content": report["content"],
+                                "file": f"vulnerabilities/{report['id']}.md",
+                                "run_id": self.run_id,
+                                "run_name": self.run_name,
+                            }
+                            f.write(json.dumps(json_record))
+                            f.write("\n")
+
+                    sarif_file = run_dir / "vulnerabilities.sarif.json"
+                    sarif_payload = self._build_sarif_report(sorted_reports)
+                    with sarif_file.open("w", encoding="utf-8") as f:
+                        json.dump(sarif_payload, f, indent=2)
 
                 if new_reports:
                     logger.info(
@@ -332,6 +354,72 @@ class Tracer:
             "total": total_stats,
             "total_tokens": total_stats["input_tokens"] + total_stats["output_tokens"],
         }
+
+    def _build_sarif_report(self, reports: list[dict[str, Any]]) -> dict[str, Any]:
+        severity_rules = {
+            "critical": {"rule_id": "STRIX.CRITICAL", "level": "error", "name": "Critical"},
+            "high": {"rule_id": "STRIX.HIGH", "level": "error", "name": "High"},
+            "medium": {"rule_id": "STRIX.MEDIUM", "level": "warning", "name": "Medium"},
+            "low": {"rule_id": "STRIX.LOW", "level": "note", "name": "Low"},
+            "info": {"rule_id": "STRIX.INFO", "level": "note", "name": "Informational"},
+        }
+
+        rules = [
+            {
+                "id": rule["rule_id"],
+                "name": f"{rule['name']} Severity",
+                "shortDescription": {"text": f"{rule['name']} severity vulnerability"},
+                "defaultConfiguration": {"level": rule["level"]},
+            }
+            for rule in severity_rules.values()
+        ]
+
+        results = []
+        for report in reports:
+            severity_key = report.get("severity", "medium").lower().strip()
+            rule = severity_rules.get(severity_key, severity_rules["medium"])
+            result = {
+                "ruleId": rule["rule_id"],
+                "level": rule["level"],
+                "message": {"text": report.get("title", "Strix vulnerability")},
+                "locations": [
+                    {
+                        "physicalLocation": {
+                            "artifactLocation": {
+                                "uri": f"vulnerabilities/{report.get('id', 'unknown')}.md"
+                            }
+                        }
+                    }
+                ],
+                "properties": {
+                    "id": report.get("id"),
+                    "severity": severity_key,
+                    "timestamp": report.get("timestamp"),
+                    "content": report.get("content"),
+                    "runId": self.run_id,
+                    "runName": self.run_name or "",
+                },
+                "partialFingerprints": {"strix/vulnerabilityId": report.get("id", "")},
+            }
+            results.append(result)
+
+        sarif_payload = {
+            "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+            "version": "2.1.0",
+            "runs": [
+                {
+                    "tool": {
+                        "driver": {
+                            "name": "Strix",
+                            "rules": rules,
+                        }
+                    },
+                    "results": results,
+                }
+            ],
+        }
+
+        return sarif_payload
 
     def cleanup(self) -> None:
         self.save_run_data(mark_complete=True)

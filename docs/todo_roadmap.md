@@ -20,7 +20,7 @@ Legend: [ ] pending, [~] in progress, [x] done
 - [ ] T03: API probing tool (OpenAPI/Swagger ingestion, auth flows, fuzzing of endpoints). (Standalone)
 - [ ] T04: Auth-focused playbooks (OIDC/SAML/SSO) with reusable prompt/tool bundles. (Standalone)
 - [ ] T05: Reporting enrichment (CVSS estimation, fix-by snippets, references to CWE/OWASP). (Standalone)
-- [ ] T06: Structured finding export (SARIF/JSONL) for CI upload. (Standalone)
+- [x] T06: Structured finding export (SARIF/JSONL) for CI upload. (Standalone) Added JSONL vulnerability export and SARIF 2.1.0 writer in tracer save_run_data/_build_sarif_report (strix/telemetry/tracer.py); tuned SARIF driver metadata to avoid assumed URLs and normalized runName serialization; documented structured exports in docs/telemetry-and-observability.md and docs/setup-and-running.md; validated end-to-end via tracer run output.
 - [ ] T07: Offline mode with cached model responses (for deterministic regression fixtures). (Depends: A03)
 - [ ] T08: Advanced redaction policies (PII, keys, JWTs) configurable per run. (Standalone)
 - [ ] T09: Prompted codegen tool for quick patch proposals with diff output. (Standalone)

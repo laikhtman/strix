@@ -31,6 +31,7 @@ poetry run strix --help
 
 ## Outputs
 - Results saved under `strix_runs/<run_name>`; includes reports/logs.
+- Structured vulnerability exports in each run: `vulnerabilities/*.md`, `vulnerabilities.csv`, `vulnerabilities.jsonl`, and `vulnerabilities.sarif.json` for CI upload.
 - Non-interactive mode also streams findings to stdout.
 
 ## Common pitfalls
