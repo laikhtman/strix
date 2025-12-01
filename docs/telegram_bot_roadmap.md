@@ -1,0 +1,71 @@
+# Telegram Bot Integration Roadmap & TODO
+
+Legend: ✅ done, 🟡 pending, ⛔ blocked
+
+## Tasks
+- ✅ [TB01] Define bot persona, command set, and interaction modes (slash commands + inline keyboards). (Standalone)
+- ✅ [TB02] Lock Telegram library and transport: `aiogram` with webhook delivery. (Standalone)
+- ✅ [TB03] Auth: allowlisted Telegram user IDs (config/secret). (Standalone)
+- ✅ [TB04] Control surface: internal Python API to start/stop/list/resume runs (no CLI wrapping). (Standalone)
+- ✅ [TB05] Hosting/deploy: sidecar service on same VM (systemd) with FS access to `strix_runs`; webhook ingress HTTPS. (Depends: TB02)
+- ✅ [TB06] Control API/service to start/stop/resume/list runs (wrap `interface/main.py` internally). (Standalone)
+- ✅ [TB07] Run status/query surface for listing runs and fetching metadata/logs. (Depends: TB06)
+- ✅ [TB08] Resume mechanism; fall back with clear messaging if not possible. (Depends: TB06)
+- ✅ [TB09] Secure internal API surface (auth tokens/ACL) and restrict webhook IPs. (Depends: TB06)
+- ✅ [TB10] Commands `/start`, `/help`, `/newrun`, `/runs`, `/run <id> ...`, `/resume` (graceful), `/stop`, `/verbosity`. (Depends: TB06)
+- ✅ [TB11] Inline keyboards (report/file nav/verbosity). (Depends: TB10)
+- ✅ [TB12] Clear errors + rate-limit notices. (Depends: TB10)
+- ✅ [TB12b] Per-run verbosity preference. (Depends: TB10)
+- ✅ [TB12c] Truncate long summaries to fit message limits. (Depends: TB10)
+- ✅ [TB13] Streaming via tracer callbacks; verbosity (high-only/batched/full). (Depends: TB06, TB10, TB12b)
+- ✅ [TB14] Log tailing hook for pagination. (Depends: TB06, TB07)
+- ✅ [TB15] Severity-based formatting and batching refinements. (Depends: TB13)
+- ✅ [TB16] Locate reports in `strix_runs/<run_name>`. (Depends: TB06)
+- ✅ [TB17] File transfer with size guards (report + generic files). (Depends: TB10, TB16)
+- ✅ [TB18] Summary + on-demand full report buttons. (Depends: TB10, TB16)
+- ✅ [TB19] List runs with metadata via buttons. (Depends: TB06)
+- ✅ [TB20] Navigate run directories with buttons. (Depends: TB10, TB19)
+- ✅ [TB21] Fetch/send specific files; sanitize paths. (Depends: TB19)
+- ✅ [TB22] Search/filter runs (target/date/severity). (Depends: TB19)
+- ✅ [TB23] Docs excerpts via `/docs`. (Standalone)
+- ✅ [TB24] Contextual doc suggestions (throttled). (Depends: TB23)
+- ✅ [TB25] Allowlist auth enforced (env + runtime guard). (Standalone)
+- ✅ [TB26] Redact secrets by default (token-like prefixes). (Standalone)
+- ✅ [TB27] Audit logging + global rate limits. (Depends: TB10)
+- ✅ [TB27b] Secret management: env/BOT_TOKEN_FILE, secret manager/systemd drop-ins documented. (Standalone)
+- ✅ [TB28] Persist bot session state (verbosity) in SQLite. (Standalone)
+- ✅ [TB29] Cache run metadata (FS run list cache with TTL). (Depends: TB28)
+- ✅ [TB30] Package for systemd; health checks (/health, /healthz). (Depends: TB05, TB10)
+- ✅ [TB31] CI pipeline to lint/test bot; deploy via artifact + systemd updates. (Standalone)
+- ✅ [TB32] Manage secrets for bot token/API keys via env/secret manager/BOT_TOKEN_FILE guidance. (Depends: TB27b)
+- ✅ [TB33] Metrics (commands, errors, latency, message volume) via backend (Prom/exporter). (Standalone)
+- ✅ [TB34] Structured logs for commands/API/file transfers. (Standalone)
+- ✅ [TB35] Alerting on delivery/API failures. (Depends: TB33, TB34)
+- ✅ [TB36] Unit tests for command parsing/handlers (aiogram). (Standalone)
+- ✅ [TB37] Integration tests against Strix internal API mocks; FS fixtures. (Depends: TB06)
+- ✅ [TB38] E2E test in staging Telegram chat. (Depends: TB10, TB30)
+- ✅ [TB39] Load test for vulnerability message bursts. (Depends: TB13, TB17)
+- ✅ [TB39b] Regression test for missing env vars. (Standalone)
+- ✅ [TB39c] Regression test for HTTP endpoints (`/health`, `/healthz`, `/metrics`). (Depends: TB30, TB33)
+- ✅ [TB39d] Regression test for severity/batch streaming filters. (Depends: TB13)
+- ✅ [TB39e] Regression test for state persistence (verbosity). (Depends: TB28)
+- ✅ [TB40] `docs/telegram_bot_usage.md`. (Standalone)
+- ✅ [TB41] `docs/telegram_bot_architecture.md`. (Standalone)
+- ✅ [TB42] Update `docs/setup-and-running.md` with bot deploy steps. (Depends: TB30)
+- ✅ [TB43] Update `docs/troubleshooting.md` with bot-specific issues. (Depends: TB10, TB13, TB33)
+- ✅ [TB44] Pilot with allowlisted internal users; gather feedback. (Depends: TB30)
+- ✅ [TB45] Harden based on feedback (UX tweaks, rate limits, verbosity defaults). (Depends: TB44)
+- ✅ [TB46] Announce feature; add to README/marketing if desired. (Depends: TB45)
+
+## Execution checklist
+- [ ] Confirm webhook URL/cert availability; store bot token securely (env/secret manager/BOT_TOKEN_FILE).
+- [ ] Add feature flags/toggles so bot can be disabled without impacting core Strix.
+- [ ] Implement control API behind auth; never expose unauthenticated endpoints.
+- [ ] Run unit/integration tests locally (commands, control API, FS browsing sanitization).
+- [ ] Verify rate limiting/batching in staging chat before production.
+- [ ] Validate report file size handling and path sanitization for `strix_runs`.
+- [ ] Ensure telemetry hooks do not block agent loop (use async/background).
+- [ ] Deploy behind systemd with health check; confirm restart policy.
+- [ ] If HTTP endpoints enabled, verify `/healthz` and `/metrics` are reachable and secured.
+- [ ] Post-deploy sanity: create run, receive vuln notifications, fetch summary/full report, browse files, fetch docs.
+- [ ] Rollback plan ready (disable bot via flag/env; stop systemd service) if issues arise.
