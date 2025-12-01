@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 from fnmatch import fnmatch
@@ -25,15 +26,37 @@ from strix.tools import get_tools_prompt
 
 logger = logging.getLogger(__name__)
 
-api_key = os.getenv("LLM_API_KEY")
+
+def _load_env_file(path: Path) -> dict[str, str]:
+    env: dict[str, str] = {}
+    if not path.exists():
+        return env
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        env[key.strip()] = val.strip()
+    return env
+
+
+file_env = _load_env_file(Path(".env"))
+
+def _getenv(name: str) -> str | None:
+    if name in os.environ:
+        return os.getenv(name)
+    return file_env.get(name)
+
+
+api_key = _getenv("LLM_API_KEY")
 if api_key:
     litellm.api_key = api_key
 
 api_base = (
-    os.getenv("LLM_API_BASE")
-    or os.getenv("OPENAI_API_BASE")
-    or os.getenv("LITELLM_BASE_URL")
-    or os.getenv("OLLAMA_API_BASE")
+    _getenv("LLM_API_BASE")
+    or _getenv("OPENAI_API_BASE")
+    or _getenv("LITELLM_BASE_URL")
+    or _getenv("OLLAMA_API_BASE")
 )
 if api_base:
     litellm.api_base = api_base
