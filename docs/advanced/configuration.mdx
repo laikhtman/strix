@@ -53,6 +53,22 @@ Configure Strix using environment variables or a config file.
   Send a per-agent `session_id` on OpenRouter requests, so each agent's calls stay on one upstream provider and its prompt cache carries over between turns. When unset, OpenRouter routes every request freely.
 </ParamField>
 
+<ParamField path="STRIX_OPENROUTER_COST_ORDER" default="false" type="boolean">
+  At startup, fetch the model's OpenRouter providers and send them as an explicit provider `order`, cheapest first for a scan's token mix. Providers below 95% uptime over the last 30 minutes are left out. OpenRouter still falls back to other providers on errors. When unset, OpenRouter picks providers itself.
+</ParamField>
+
+<ParamField path="STRIX_OPENROUTER_COST_WEIGHTS" default="0.97,0.0277,0.0023" type="string">
+  Shares of a scan's tokens that are cached input, uncached input, and output, used to score providers for `STRIX_OPENROUTER_COST_ORDER`.
+</ParamField>
+
+<ParamField path="STRIX_OPENROUTER_ORDER_EXCLUDE" default="" type="string">
+  Comma-separated provider names or endpoint tags (for example `Baidu,makora/fp4`) to leave out of the cost order.
+</ParamField>
+
+<ParamField path="STRIX_OPENROUTER_MAX_LATENCY_P50" type="number">
+  With `STRIX_OPENROUTER_COST_ORDER`, ask OpenRouter to move providers whose median time to first token is above this many seconds behind the ones under it. OpenRouter judges this from its own recent latency stats.
+</ParamField>
+
 <ParamField path="STRIX_CACHE_BLOCK_TOKENS" default="128" type="integer">
   Token block size that providers cache prompts in. A turn counts as a cache miss in the run report only when the cached tokens fall at least this many tokens short of the previous prompt and the prompt did not shrink. Lower it for providers with smaller blocks (DeepSeek and GLM use 64; vLLM defaults to 16).
 </ParamField>

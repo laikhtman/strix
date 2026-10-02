@@ -7,6 +7,8 @@ from typing import Literal
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from strix.config.openrouter_order import DEFAULT_WEIGHTS
+
 
 ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 ApiType = Literal["responses", "chat_completions"]
@@ -65,6 +67,23 @@ class LlmSettings(BaseSettings):
     openrouter_sticky_sessions: bool = Field(
         default=False,
         alias="STRIX_OPENROUTER_STICKY_SESSIONS",
+    )
+    openrouter_cost_order: bool = Field(
+        default=False,
+        alias="STRIX_OPENROUTER_COST_ORDER",
+    )
+    openrouter_cost_weights: str = Field(
+        default=DEFAULT_WEIGHTS,
+        alias="STRIX_OPENROUTER_COST_WEIGHTS",
+    )
+    openrouter_order_exclude: str = Field(
+        default="",
+        alias="STRIX_OPENROUTER_ORDER_EXCLUDE",
+    )
+    openrouter_max_latency_p50: float | None = Field(
+        default=None,
+        gt=0,
+        alias="STRIX_OPENROUTER_MAX_LATENCY_P50",
     )
     disable_streaming: bool = Field(
         default=False,
