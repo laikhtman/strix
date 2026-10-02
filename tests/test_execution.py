@@ -815,6 +815,27 @@ async def test_salvage_stream_to_session_preserves_full_history(tmp_path: Any) -
 
 
 @pytest.mark.asyncio
+async def test_salvage_stream_to_session_dedups_replayed_input(tmp_path: Any) -> None:
+    session = SQLiteSession("child", tmp_path / "agents.db")
+    await session.add_items([{"role": "user", "content": "identity + task"}])
+    pre_run = list(await session.get_items())
+
+    # to_input_list() replays the run's entire input — items the session
+    # already holds — before the uncommitted turns.
+    stream = _SalvageStream(
+        [
+            {"role": "user", "content": "identity + task"},
+            {"role": "assistant", "content": "recon turn 1"},
+        ]
+    )
+    await execution._salvage_stream_to_session(session, pre_run, stream, "child")
+
+    stored = [cast("dict[str, Any]", i) for i in await session.get_items()]
+    assert [i["content"] for i in stored] == ["identity + task", "recon turn 1"]
+    session.close()
+
+
+@pytest.mark.asyncio
 async def test_seed_initial_input_persists_and_is_idempotent(tmp_path: Any) -> None:
     session = SQLiteSession("child", tmp_path / "agents.db")
     identity = [{"role": "user", "content": "You are agent recon (abc); do X."}]

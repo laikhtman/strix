@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import uuid
 from collections.abc import Callable
@@ -150,13 +151,20 @@ def _transient_model_retry_delay(attempt: int) -> float:
     return min(delay, _TRANSIENT_MODEL_RETRY_MAX_DELAY_S)
 
 
+def _salvage_item_key(item: Any) -> str:
+    try:
+        return json.dumps(item, sort_keys=True, default=str)
+    except (TypeError, ValueError):
+        return repr(item)
+
+
 async def _salvage_stream_to_session(
     session: Session,
     pre_run_items: list[Any],
     stream: Any,
     agent_id: str,
 ) -> None:
-    """Persist a crashed run's full history so a revived agent loses no context."""
+    """Persist a crashed run's new items so a revived agent loses no context."""
     if stream is None:
         return
     try:
@@ -164,7 +172,17 @@ async def _salvage_stream_to_session(
     except Exception:
         logger.exception("could not build salvage history for %s", agent_id)
         return
-    desired = list(pre_run_items) + replay
+    # to_input_list() replays the run's entire input, which the session already
+    # holds; appending it whole duplicates the history on every crash and
+    # detaches tool outputs from their calls, which providers then reject.
+    known = {_salvage_item_key(item) for item in pre_run_items}
+    new_items = []
+    for item in replay:
+        key = _salvage_item_key(item)
+        if key not in known:
+            known.add(key)
+            new_items.append(item)
+    desired = list(pre_run_items) + new_items
     if len(desired) <= len(pre_run_items):
         return
     try:
