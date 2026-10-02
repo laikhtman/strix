@@ -6,10 +6,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from litellm.types.utils import LlmProviders
 from litellm.utils import ProviderConfigManager
+from pydantic import ValidationError
 
 from strix.config import openrouter_order
 from strix.config.models import _install_openrouter_stream_cost_capture
-from strix.config.openrouter_order import DEFAULT_WEIGHTS
+from strix.config.settings import DEFAULT_OPENROUTER_COST_WEIGHTS, LlmSettings
 
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
     from litellm.types.llms.openai import AllMessageValues
 
-WEIGHTS = openrouter_order.parse_weights(DEFAULT_WEIGHTS)
+WEIGHTS = openrouter_order.parse_weights(DEFAULT_OPENROUTER_COST_WEIGHTS)
 
 
 def _endpoint(
@@ -36,11 +37,15 @@ def _endpoint(
     }
 
 
+def _settings(**env: str) -> LlmSettings:
+    return LlmSettings.model_validate({"STRIX_LLM": "openrouter/z-ai/glm-5.3", **env})
+
+
 @pytest.fixture(autouse=True)
 def _clear_orders() -> Iterator[None]:
-    openrouter_order._ORDERS.clear()
+    openrouter_order._PREFERENCES.clear()
     yield
-    openrouter_order._ORDERS.clear()
+    openrouter_order._PREFERENCES.clear()
 
 
 def test_ranks_by_token_mix_not_list_price() -> None:
@@ -49,7 +54,7 @@ def test_ranks_by_token_mix_not_list_price() -> None:
         _endpoint("cheap-output", 1.4e-6, 1e-6, 2.6e-7),
         _endpoint("cheap-cache", 1.5e-7, 4e-6, 1.5e-7),
     ]
-    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, set()) == [
+    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, set(), 95) == [
         "cheap-cache",
         "cheap-output",
     ]
@@ -57,7 +62,7 @@ def test_ranks_by_token_mix_not_list_price() -> None:
 
 def test_missing_cache_price_bills_cached_tokens_at_prompt_price() -> None:
     endpoints = [_endpoint("no-cache", 2e-7, 1e-6, None), _endpoint("cache", 3e-7, 1e-6, 1.8e-7)]
-    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, set()) == ["cache", "no-cache"]
+    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, set(), 95) == ["cache", "no-cache"]
 
 
 def test_skips_unhealthy_and_excluded_endpoints() -> None:
@@ -68,7 +73,13 @@ def test_skips_unhealthy_and_excluded_endpoints() -> None:
         _endpoint("new", 1e-7, 1e-6, 1e-7, uptime_last_30m=None),
         _endpoint("ok", 2e-7, 1e-6, 2e-7),
     ]
-    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, {"baidu"}) == ["new", "ok"]
+    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, {"baidu"}, 95) == ["new", "ok"]
+    assert openrouter_order.rank_endpoints(endpoints, WEIGHTS, set(), 75) == [
+        "flaky",
+        "baidu/fp8",
+        "new",
+        "ok",
+    ]
 
 
 @pytest.mark.parametrize("raw", ["0.9,0.1", "a,b,c", "1,-1,0"])
@@ -77,10 +88,16 @@ def test_rejects_bad_weights(raw: str) -> None:
         openrouter_order.parse_weights(raw)
 
 
+@pytest.mark.parametrize("raw", ['{"p95": 3}', '{"p50": 0}', "2"])
+def test_rejects_bad_latency_cutoffs(raw: str) -> None:
+    with pytest.raises(ValidationError):
+        _settings(STRIX_OPENROUTER_MAX_LATENCY=raw)
+
+
 def test_fetch_failure_leaves_routing_alone() -> None:
     with patch("strix.config.openrouter_order.httpx.get", side_effect=OSError("offline")):
-        openrouter_order.configure("openrouter/z-ai/glm-5.3", DEFAULT_WEIGHTS, "")
-    assert openrouter_order.provider_preferences("z-ai/glm-5.3", None) is None
+        openrouter_order.configure(_settings())
+    assert openrouter_order.provider_preferences("z-ai/glm-5.3") is None
 
 
 def test_request_carries_cost_order_and_latency_preference() -> None:
@@ -93,9 +110,10 @@ def test_request_carries_cost_order_and_latency_preference() -> None:
             ]
         }
     }
+    llm = _settings(STRIX_OPENROUTER_MAX_LATENCY='{"p50": 1.5, "p90": 4}')
     with patch("strix.config.openrouter_order.httpx.get", return_value=response) as get:
-        openrouter_order.configure("openrouter/z-ai/glm-5.3", DEFAULT_WEIGHTS, "")
-        openrouter_order.configure("openrouter/z-ai/glm-5.3", DEFAULT_WEIGHTS, "")
+        openrouter_order.configure(llm)
+        openrouter_order.configure(llm)
     get.assert_called_once()
 
     _install_openrouter_stream_cost_capture()
@@ -106,12 +124,11 @@ def test_request_carries_cost_order_and_latency_preference() -> None:
     messages: list[AllMessageValues] = [{"role": "user", "content": "hi"}]
     with patch("strix.config.models.load_settings") as settings:
         settings.return_value.llm.openrouter_sticky_sessions = False
-        settings.return_value.llm.openrouter_max_latency_p50 = 1.5
         body = config.transform_request("z-ai/glm-5.3", messages, {}, {}, {})
         other = config.transform_request("moonshotai/kimi-k3", messages, {}, {}, {})
     assert body["provider"] == {
         "order": ["relace", "wafer"],
         "allow_fallbacks": True,
-        "preferred_max_latency": {"p50": 1.5},
+        "preferred_max_latency": {"p50": 1.5, "p90": 4.0},
     }
     assert "provider" not in other

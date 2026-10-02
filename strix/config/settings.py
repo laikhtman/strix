@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, Json, PositiveFloat
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from strix.config.openrouter_order import DEFAULT_WEIGHTS
 
 
 ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max"]
 ApiType = Literal["responses", "chat_completions"]
+LatencyCutoffs = dict[Literal["p50", "p75", "p90", "p99"], PositiveFloat]
 
 DEFAULT_MAX_TURNS = 500
+# Cached input, uncached input, and output shares of a GLM-5.3 scan's tokens.
+DEFAULT_OPENROUTER_COST_WEIGHTS = "0.97,0.0275,0.0025"
 
 _BASE_CONFIG = SettingsConfigDict(
     case_sensitive=False,
@@ -73,17 +74,22 @@ class LlmSettings(BaseSettings):
         alias="STRIX_OPENROUTER_COST_ORDER",
     )
     openrouter_cost_weights: str = Field(
-        default=DEFAULT_WEIGHTS,
+        default=DEFAULT_OPENROUTER_COST_WEIGHTS,
         alias="STRIX_OPENROUTER_COST_WEIGHTS",
     )
     openrouter_order_exclude: str = Field(
         default="",
         alias="STRIX_OPENROUTER_ORDER_EXCLUDE",
     )
-    openrouter_max_latency_p50: float | None = Field(
+    openrouter_max_latency: Json[LatencyCutoffs] | None = Field(
         default=None,
-        gt=0,
-        alias="STRIX_OPENROUTER_MAX_LATENCY_P50",
+        alias="STRIX_OPENROUTER_MAX_LATENCY",
+    )
+    openrouter_min_uptime: float = Field(
+        default=95.0,
+        ge=0,
+        le=100,
+        alias="STRIX_OPENROUTER_MIN_UPTIME",
     )
     disable_streaming: bool = Field(
         default=False,

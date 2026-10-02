@@ -54,7 +54,7 @@ Configure Strix using environment variables or a config file.
 </ParamField>
 
 <ParamField path="STRIX_OPENROUTER_COST_ORDER" default="false" type="boolean">
-  At startup, fetch the model's OpenRouter providers and send them as an explicit provider `order`, cheapest first for a scan's token mix. Providers below 95% uptime over the last 30 minutes are left out. OpenRouter still falls back to other providers on errors. When unset, OpenRouter picks providers itself.
+  At startup, fetch the model's OpenRouter providers and send them as an explicit provider `order`, cheapest first for a scan's token mix. Providers below `STRIX_OPENROUTER_MIN_UPTIME` over the last 30 minutes are left out. OpenRouter still falls back to other providers on errors. When unset, OpenRouter picks providers itself.
 </ParamField>
 
 <ParamField path="STRIX_OPENROUTER_COST_WEIGHTS" default="0.97,0.0277,0.0023" type="string">
@@ -65,8 +65,12 @@ Configure Strix using environment variables or a config file.
   Comma-separated provider names or endpoint tags (for example `Baidu,makora/fp4`) to leave out of the cost order.
 </ParamField>
 
-<ParamField path="STRIX_OPENROUTER_MAX_LATENCY_P50" type="number">
-  With `STRIX_OPENROUTER_COST_ORDER`, ask OpenRouter to move providers whose median time to first token is above this many seconds behind the ones under it. OpenRouter judges this from its own recent latency stats.
+<ParamField path="STRIX_OPENROUTER_MIN_UPTIME" default="95" type="number">
+  Minimum uptime percentage over the last 30 minutes for a provider to be included in `STRIX_OPENROUTER_COST_ORDER`.
+</ParamField>
+
+<ParamField path="STRIX_OPENROUTER_MAX_LATENCY" type="string">
+  With `STRIX_OPENROUTER_COST_ORDER`, prefer providers whose recent latency is under these cutoffs, in seconds. A JSON object of percentile cutoffs, passed to OpenRouter's `preferred_max_latency` (e.g. `{"p50":2,"p90":8}`); `p50`, `p75`, `p90`, and `p99` are supported. Slower providers stay available as fallbacks.
 </ParamField>
 
 <ParamField path="STRIX_CACHE_BLOCK_TOKENS" default="128" type="integer">

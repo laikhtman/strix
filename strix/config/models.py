@@ -643,9 +643,7 @@ def configure_sdk_model_defaults(settings: Settings) -> None:
     _configure_litellm_compatibility()
     _configure_openrouter_attribution(llm.model)
     if llm.openrouter_cost_order and is_openrouter_model(llm.model):
-        openrouter_order.configure(
-            llm.model or "", llm.openrouter_cost_weights, llm.openrouter_order_exclude
-        )
+        openrouter_order.configure(llm)
     if llm.api_key:
         set_default_openai_key(llm.api_key, use_for_tracing=False)
         _configure_litellm_default("api_key", llm.api_key)
@@ -755,17 +753,12 @@ def _install_openrouter_stream_cost_capture() -> None:
             # Pin each agent's calls to one upstream provider so its prompt cache
             # survives between turns.
             body: dict[str, Any] = super().transform_request(*args, **kwargs)
-            llm = load_settings().llm
             agent_id = request_log.current_call_context().agent_id
-            if agent_id and llm.openrouter_sticky_sessions:
+            if agent_id and load_settings().llm.openrouter_sticky_sessions:
                 session_id = _OPENROUTER_SESSION_IDS.setdefault(agent_id, str(uuid.uuid4()))
                 body.setdefault("session_id", session_id)
-            # Route to the cheapest provider for a scan's token mix first.
             model = kwargs.get("model", args[0] if args else "")
-            preferences = openrouter_order.provider_preferences(
-                model, llm.openrouter_max_latency_p50
-            )
-            if preferences:
+            if preferences := openrouter_order.provider_preferences(model):
                 body.setdefault("provider", preferences)
             return body
 
